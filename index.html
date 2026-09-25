@@ -1,173 +1,179 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image to Video</title>
 
-<title>AI Image to Video</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
 
-<style>
-* {
-    box-sizing: border-box;
-}
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
 
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #111827;
-    color: white;
-}
+    h1 {
+      margin-bottom: 10px;
+    }
 
-.container {
-    width: 92%;
-    max-width: 500px;
-    margin: 40px auto;
-    padding: 25px;
-    background: #1f2937;
-    border-radius: 20px;
-}
+    input[type="file"],
+    textarea,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 15px;
+    }
 
-h1 {
-    text-align: center;
-    font-size: 28px;
-}
+    textarea {
+      height: 100px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      resize: none;
+      font-size: 15px;
+    }
 
-.subtitle {
-    text-align: center;
-    color: #b8c1cc;
-}
+    button {
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #111;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-label {
-    display: block;
-    margin-top: 22px;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
+    button:disabled {
+      opacity: 0.6;
+    }
 
-input[type="file"],
-textarea {
-    width: 100%;
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid #4b5563;
-    background: #111827;
-    color: white;
-}
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
 
-textarea {
-    height: 110px;
-    resize: none;
-}
-
-#preview {
-    width: 100%;
-    margin-top: 15px;
-    border-radius: 12px;
-    display: none;
-}
-
-button {
-    width: 100%;
-    margin-top: 20px;
-    padding: 15px;
-    border: none;
-    border-radius: 12px;
-    background: #7c3aed;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-button:active {
-    transform: scale(0.98);
-}
-
-#status {
-    text-align: center;
-    margin-top: 18px;
-    color: #c4b5fd;
-}
-</style>
+    #preview {
+      max-width: 100%;
+      margin-top: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
 
     <h1>🎬 AI Image to Video</h1>
 
-    <p class="subtitle">
-        Image upload karo aur video ka movement likho
-    </p>
+    <p>Image upload karo aur video ka movement likho</p>
 
-    <label>📷 Image चुनें</label>
+    <input type="file" id="imageInput" accept="image/*">
 
-    <input
-        type="file"
-        id="imageInput"
-        accept="image/*"
-    >
-
-    <img id="preview">
-
-    <label>✍️ Video Prompt</label>
+    <img id="preview" alt="Image Preview">
 
     <textarea
-        id="prompt"
-        placeholder="Example: Camera slowly moves forward, natural movement, realistic video..."
+      id="prompt"
+      placeholder="Video Prompt likho..."
     ></textarea>
 
-    <button onclick="generateVideo()">
-        🎬 Generate Video
+    <button id="generateBtn">
+      🎬 Generate Video
     </button>
 
-    <div id="status"></div>
+    <div id="status">
+      Ready
+    </div>
 
-</div>
+  </div>
 
-<script>
+  <script>
+    const imageInput = document.getElementById("imageInput");
+    const promptInput = document.getElementById("prompt");
+    const generateBtn = document.getElementById("generateBtn");
+    const statusText = document.getElementById("status");
+    const preview = document.getElementById("preview");
 
-const imageInput = document.getElementById("imageInput");
-const preview = document.getElementById("preview");
-const statusText = document.getElementById("status");
+    // Image preview
+    imageInput.addEventListener("change", () => {
+      const image = imageInput.files[0];
 
-imageInput.addEventListener("change", function() {
-
-    const file = this.files[0];
-
-    if (file) {
-
-        preview.src = URL.createObjectURL(file);
-
+      if (image) {
+        preview.src = URL.createObjectURL(image);
         preview.style.display = "block";
-
         statusText.innerText = "Image ready ✅";
-    }
+      }
+    });
 
-});
+    // Generate video
+    generateBtn.addEventListener("click", async () => {
 
-function generateVideo() {
+      const image = imageInput.files[0];
+      const prompt = promptInput.value.trim();
 
-    const image = imageInput.files[0];
-
-    const prompt = document.getElementById("prompt").value.trim();
-
-    if (!image) {
-        statusText.innerText = "❌ Pehle image upload karo.";
+      if (!image) {
+        statusText.innerText = "❌ Pehle image select karo.";
         return;
-    }
+      }
 
-    if (!prompt) {
-        statusText.innerText = "❌ Video ka prompt likho.";
-        return;
-    }
+      statusText.innerText = "⏳ Video generate ho raha hai...";
+      generateBtn.disabled = true;
 
-    statusText.innerText =
-        "⏳ AI video generation system connect kiya jayega...";
+      const formData = new FormData();
 
-}
+      formData.append("image", image);
+      formData.append(
+        "prompt",
+        prompt || "Smooth natural motion"
+      );
 
-</script>
+      try {
+
+        const response = await fetch("/generate-video", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Video generation failed"
+          );
+        }
+
+        statusText.innerText =
+          "✅ Video generation started! Project ID: " +
+          data.projectId;
+
+        console.log(data);
+
+      } catch (error) {
+
+        console.error(error);
+
+        statusText.innerText =
+          "❌ Error: " + error.message;
+
+      } finally {
+
+        generateBtn.disabled = false;
+
+      }
+    });
+  </script>
 
 </body>
 </html>
