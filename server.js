@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const path = require("path");
 const { Client } = require("magic-hour");
 
 const app = express();
@@ -13,11 +14,11 @@ const client = new Client({
   token: process.env.MAGIC_HOUR_API_KEY
 });
 
+// Frontend files
+app.use(express.static(__dirname));
+
 app.get("/", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "AI Video Backend Ready"
-  });
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.get("/test-api-key", (req, res) => {
