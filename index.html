@@ -75,6 +75,7 @@
       width: 100%;
       border-radius: 10px;
       margin-top: 10px;
+      background: #000;
     }
 
     #downloadBtn {
@@ -114,7 +115,6 @@
   Ready
 </div>
 
-<!-- Video Result -->
 <div id="videoSection">
 
   <h2>🎉 Your Video</h2>
@@ -188,6 +188,105 @@
     );
 
 
+    // Check video status
+    async function checkVideoStatus(projectId) {
+
+      try {
+
+        const response =
+          await fetch(
+            "/video-status/" +
+            projectId
+          );
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Status check failed"
+          );
+
+        }
+
+
+        console.log(
+          "Video status:",
+          data
+        );
+
+
+        // Video ready
+        if (
+          data.status === "complete" &&
+          data.videoUrl
+        ) {
+
+          statusText.innerText =
+            "✅ Video ready!";
+
+          resultVideo.src =
+            data.videoUrl;
+
+          downloadBtn.href =
+            data.videoUrl;
+
+          videoSection.style.display =
+            "block";
+
+          generateBtn.disabled =
+            false;
+
+          return;
+        }
+
+
+        // Generation failed
+        if (
+          data.status === "error" ||
+          data.status === "failed"
+        ) {
+
+          statusText.innerText =
+            "❌ Video generation failed";
+
+          generateBtn.disabled =
+            false;
+
+          return;
+        }
+
+
+        // Still processing
+        statusText.innerText =
+          "⏳ Video बन रहा है... " +
+          data.status;
+
+        setTimeout(
+          () => {
+            checkVideoStatus(projectId);
+          },
+          3000
+        );
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        statusText.innerText =
+          "❌ Status Error: " +
+          error.message;
+
+        generateBtn.disabled =
+          false;
+      }
+    }
+
+
     // Generate video
     generateBtn.addEventListener(
       "click",
@@ -209,14 +308,14 @@
         }
 
 
-        statusText.innerText =
-          "⏳ Video generate ho raha hai...";
-
         generateBtn.disabled =
           true;
 
         videoSection.style.display =
           "none";
+
+        statusText.innerText =
+          "⏳ Video generation शुरू हो रही है...";
 
 
         const formData =
@@ -263,31 +362,28 @@
 
 
           console.log(
-            "Server response:",
+            "Generation started:",
             data
           );
 
 
-          if (data.videoUrl) {
+          if (!data.projectId) {
 
-            statusText.innerText =
-              "✅ Video ready!";
-
-            resultVideo.src =
-              data.videoUrl;
-
-            downloadBtn.href =
-              data.videoUrl;
-
-            videoSection.style.display =
-              "block";
-
-          } else {
-
-            statusText.innerText =
-              "⚠️ Video URL नहीं मिला।";
+            throw new Error(
+              "Project ID नहीं मिला"
+            );
 
           }
+
+
+          statusText.innerText =
+            "⏳ Video बन रहा है...";
+
+
+          // Start checking every 3 seconds
+          checkVideoStatus(
+            data.projectId
+          );
 
 
         } catch (error) {
@@ -298,11 +394,9 @@
             "❌ Error: " +
             error.message;
 
+          generateBtn.disabled =
+            false;
         }
-
-
-        generateBtn.disabled =
-          false;
 
       }
     );
