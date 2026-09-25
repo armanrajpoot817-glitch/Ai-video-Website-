@@ -14,165 +14,169 @@ fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(outputDir, { recursive: true });
 
 const storage = multer.diskStorage({
-destination: uploadDir,
+  destination: uploadDir,
 
-filename: (req, file, cb) => {
-const extension =
-path.extname(file.originalname).toLowerCase();
+  filename: (req, file, cb) => {
+    const extension =
+      path.extname(file.originalname).toLowerCase();
 
-cb(
-  null,
-  "image-" + Date.now() + extension
-);
-
-}
+    cb(
+      null,
+      "image-" + Date.now() + extension
+    );
+  }
 });
 
 const upload = multer({
-storage: storage
+  storage: storage
 });
 
 const client = new Client({
-token: process.env.MAGIC_HOUR_API_KEY
+  token: process.env.MAGIC_HOUR_API_KEY
 });
 
 app.use(express.static(__dirname));
 
-app.get("/", (req, res) => {
-res.sendFile(
-path.join(__dirname, "index.html")
+app.use(
+  "/videos",
+  express.static(outputDir)
 );
+
+app.get("/", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "index.html")
+  );
 });
 
 app.get("/test-api-key", (req, res) => {
-res.json({
-status: process.env.MAGIC_HOUR_API_KEY
-? "API key connected"
-: "API key missing"
-});
+  res.json({
+    status: process.env.MAGIC_HOUR_API_KEY
+      ? "API key connected"
+      : "API key missing"
+  });
 });
 
 app.post(
-"/generate-video",
-upload.single("image"),
-async (req, res) => {
+  "/generate-video",
+  upload.single("image"),
+  async (req, res) => {
 
-try {
+    try {
 
-  if (!req.file) {
-    return res.status(400).json({
-      error: "Image is required"
-    });
-  }
-
-  console.log(
-    "Uploaded file:",
-    req.file.path
-  );
-
-  const prompt =
-    req.body.prompt ||
-    "Smooth natural motion";
-
-  const result =
-    await client.v1.imageToVideo.generate(
-      {
-        name: "AI Image to Video",
-
-        endSeconds: 5,
-
-        resolution: "480p",
-
-        assets: {
-          imageFilePath: req.file.path
-        },
-
-        style: {
-          prompt: prompt
-        }
-      },
-      {
-        waitForCompletion: true,
-
-        downloadOutputs: true,
-
-        downloadDirectory: outputDir
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Image is required"
+        });
       }
-    );
 
-  console.log(
-    "Generation complete:",
-    result.id
-  );
+      console.log(
+        "Uploaded file:",
+        req.file.path
+      );
 
-  console.log(
-    "Downloaded files:",
-    result.downloadedPaths
-  );
+      const prompt =
+        req.body.prompt ||
+        "Smooth natural motion";
 
-  let videoUrl = null;
+      const result =
+        await client.v1.imageToVideo.generate(
+          {
+            name: "AI Image to Video",
 
-  if (
-    result.downloadedPaths &&
-    result.downloadedPaths.length > 0
-  ) {
+            endSeconds: 5,
 
-    const filePath =
-      result.downloadedPaths[0];
+            resolution: "480p",
 
-    const fileName =
-      path.basename(filePath);
+            assets: {
+              imageFilePath: req.file.path
+            },
 
-    videoUrl =
-      "/videos/" + fileName;
-  }
+            style: {
+              prompt: prompt
+            }
+          },
+          {
+            waitForCompletion: true,
 
-  res.json({
-    status: result.status,
-    projectId: result.id,
-    videoUrl: videoUrl
-  });
+            downloadOutputs: true,
 
-} catch (error) {
+            downloadDirectory: outputDir
+          }
+        );
 
-  console.error(
-    "Generation error:",
-    error
-  );
+      console.log(
+        "Generation complete:",
+        result.id
+      );
 
-  // Magic Hour की असली error निकालने की कोशिश
-  let details = null;
+      console.log(
+        "Downloaded files:",
+        result.downloadedPaths
+      );
 
-  try {
-    if (error.response) {
-      details =
-        await error.response.json();
+      if (
+        !result.downloadedPaths ||
+        result.downloadedPaths.length === 0
+      ) {
+        return res.status(500).json({
+          error: "Video बनी लेकिन file नहीं मिली"
+        });
+      }
+
+      const filePath =
+        result.downloadedPaths[0];
+
+      const fileName =
+        path.basename(filePath);
+
+      const videoUrl =
+        "/videos/" + fileName;
+
+      console.log(
+        "Video URL:",
+        videoUrl
+      );
+
+      res.json({
+        status: "complete",
+        projectId: result.id,
+        videoUrl: videoUrl
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Generation error:",
+        error
+      );
+
+      let details = null;
+
+      try {
+
+        if (error.response) {
+          details =
+            await error.response.json();
+        }
+
+      } catch (parseError) {
+        details = null;
+      }
+
+      res.status(500).json({
+        error:
+          details?.message ||
+          error.message ||
+          "Video generation failed"
+      });
     }
-  } catch (parseError) {
-    details = null;
   }
-
-  res.status(500).json({
-    error:
-      details?.message ||
-      error.message ||
-      "Video generation failed"
-  });
-}
-
-}
-);
-
-// Generated videos serve करना
-app.use(
-"/videos",
-express.static(outputDir)
 );
 
 app.listen(PORT, () => {
 
-console.log(
-"Server running on port ${PORT}"
-);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 
 });
