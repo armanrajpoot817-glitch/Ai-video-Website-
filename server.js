@@ -6,8 +6,21 @@ const { Client } = require("magic-hour");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Upload file को original extension के साथ save करना
+const storage = multer.diskStorage({
+  destination: "/tmp/uploads/",
+  filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+
+    cb(
+      null,
+      "image-" + Date.now() + extension
+    );
+  }
+});
+
 const upload = multer({
-  dest: "/tmp/uploads/"
+  storage: storage
 });
 
 const client = new Client({
@@ -37,25 +50,31 @@ app.post("/generate-video", upload.single("image"), async (req, res) => {
       });
     }
 
-    const prompt = req.body.prompt || "Smooth natural motion";
+    console.log("Uploaded file:", req.file.path);
 
-    const result = await client.v1.imageToVideo.generate(
-      {
-        name: "AI Image to Video",
-        endSeconds: 5,
-        resolution: "480p",
-        assets: {
-          imageFilePath: req.file.path
+    const prompt =
+      req.body.prompt || "Smooth natural motion";
+
+    const result =
+      await client.v1.imageToVideo.generate(
+        {
+          name: "AI Image to Video",
+          endSeconds: 5,
+          resolution: "480p",
+
+          assets: {
+            imageFilePath: req.file.path
+          },
+
+          style: {
+            prompt: prompt
+          }
         },
-        style: {
-          prompt: prompt
+        {
+          waitForCompletion: true,
+          downloadOutputs: false
         }
-      },
-      {
-        waitForCompletion: true,
-        downloadOutputs: false
-      }
-    );
+      );
 
     res.json({
       status: result.status,
@@ -67,11 +86,15 @@ app.post("/generate-video", upload.single("image"), async (req, res) => {
     console.error(error);
 
     res.status(500).json({
-      error: error.message || "Video generation failed"
+      error:
+        error.message ||
+        "Video generation failed"
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 });
