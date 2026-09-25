@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html lang="hi">
+<!DOCTYPE html><html lang="hi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Image to Video</title>
-
-  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>AI Image to Video</title>  <style>
     body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
@@ -69,111 +65,247 @@
       border-radius: 10px;
       display: none;
     }
-  </style>
-</head>
 
-<body>
+    #videoSection {
+      display: none;
+      margin-top: 25px;
+    }
 
-  <div class="container">
+    #resultVideo {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
 
-    <h1>🎬 AI Image to Video</h1>
+    #downloadBtn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 12px 20px;
+      background: #111;
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+    }
+  </style></head><body>  <div class="container"><h1>🎬 AI Image to Video</h1>
 
-    <p>Image upload karo aur video ka movement likho</p>
+<p>Image upload karo aur video ka movement likho</p>
 
-    <input type="file" id="imageInput" accept="image/*">
+<input
+  type="file"
+  id="imageInput"
+  accept="image/*"
+>
 
-    <img id="preview" alt="Image Preview">
+<img
+  id="preview"
+  alt="Image Preview"
+>
 
-    <textarea
-      id="prompt"
-      placeholder="Video Prompt likho..."
-    ></textarea>
+<textarea
+  id="prompt"
+  placeholder="Video Prompt likho..."
+></textarea>
 
-    <button id="generateBtn">
-      🎬 Generate Video
-    </button>
+<button id="generateBtn">
+  🎬 Generate Video
+</button>
 
-    <div id="status">
-      Ready
-    </div>
+<div id="status">
+  Ready
+</div>
 
-  </div>
+<!-- Video Result -->
+<div id="videoSection">
 
-  <script>
-    const imageInput = document.getElementById("imageInput");
-    const promptInput = document.getElementById("prompt");
-    const generateBtn = document.getElementById("generateBtn");
-    const statusText = document.getElementById("status");
-    const preview = document.getElementById("preview");
+  <h2>🎉 Your Video</h2>
+
+  <video
+    id="resultVideo"
+    controls
+    playsinline
+  ></video>
+
+  <a
+    id="downloadBtn"
+    download="ai-video.mp4"
+  >
+    ⬇️ Download Video
+  </a>
+
+</div>
+
+  </div>  <script>
+
+    const imageInput =
+      document.getElementById("imageInput");
+
+    const promptInput =
+      document.getElementById("prompt");
+
+    const generateBtn =
+      document.getElementById("generateBtn");
+
+    const statusText =
+      document.getElementById("status");
+
+    const preview =
+      document.getElementById("preview");
+
+    const videoSection =
+      document.getElementById("videoSection");
+
+    const resultVideo =
+      document.getElementById("resultVideo");
+
+    const downloadBtn =
+      document.getElementById("downloadBtn");
+
 
     // Image preview
-    imageInput.addEventListener("change", () => {
-      const image = imageInput.files[0];
+    imageInput.addEventListener(
+      "change",
+      () => {
 
-      if (image) {
-        preview.src = URL.createObjectURL(image);
-        preview.style.display = "block";
-        statusText.innerText = "Image ready ✅";
-      }
-    });
+        const image =
+          imageInput.files[0];
 
-    // Generate video
-    generateBtn.addEventListener("click", async () => {
+        if (image) {
 
-      const image = imageInput.files[0];
-      const prompt = promptInput.value.trim();
+          preview.src =
+            URL.createObjectURL(image);
 
-      if (!image) {
-        statusText.innerText = "❌ Pehle image select karo.";
-        return;
-      }
+          preview.style.display =
+            "block";
 
-      statusText.innerText = "⏳ Video generate ho raha hai...";
-      generateBtn.disabled = true;
+          videoSection.style.display =
+            "none";
 
-      const formData = new FormData();
-
-      formData.append("image", image);
-      formData.append(
-        "prompt",
-        prompt || "Smooth natural motion"
-      );
-
-      try {
-
-        const response = await fetch("/generate-video", {
-          method: "POST",
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.error || "Video generation failed"
-          );
+          statusText.innerText =
+            "Image ready ✅";
         }
 
+      }
+    );
+
+
+    // Generate video
+    generateBtn.addEventListener(
+      "click",
+      async () => {
+
+        const image =
+          imageInput.files[0];
+
+        const prompt =
+          promptInput.value.trim();
+
+
+        if (!image) {
+
+          statusText.innerText =
+            "❌ Pehle image select karo.";
+
+          return;
+        }
+
+
         statusText.innerText =
-          "✅ Video generation started! Project ID: " +
-          data.projectId;
+          "⏳ Video generate ho raha hai...";
 
-        console.log(data);
+        generateBtn.disabled =
+          true;
 
-      } catch (error) {
+        videoSection.style.display =
+          "none";
 
-        console.error(error);
 
-        statusText.innerText =
-          "❌ Error: " + error.message;
+        const formData =
+          new FormData();
 
-      } finally {
 
-        generateBtn.disabled = false;
+        formData.append(
+          "image",
+          image
+        );
+
+
+        formData.append(
+          "prompt",
+          prompt ||
+          "Smooth natural motion"
+        );
+
+
+        try {
+
+          const response =
+            await fetch(
+              "/generate-video",
+              {
+                method: "POST",
+                body: formData
+              }
+            );
+
+
+          const data =
+            await response.json();
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error ||
+              "Video generation failed"
+            );
+
+          }
+
+
+          console.log(
+            "Server response:",
+            data
+          );
+
+
+          if (data.videoUrl) {
+
+            statusText.innerText =
+              "✅ Video ready!";
+
+            resultVideo.src =
+              data.videoUrl;
+
+            downloadBtn.href =
+              data.videoUrl;
+
+            videoSection.style.display =
+              "block";
+
+          } else {
+
+            statusText.innerText =
+              "⚠️ Video URL नहीं मिला।";
+
+          }
+
+
+        } catch (error) {
+
+          console.error(error);
+
+          statusText.innerText =
+            "❌ Error: " +
+            error.message;
+
+        }
+
+
+        generateBtn.disabled =
+          false;
 
       }
-    });
-  </script>
+    );
 
-</body>
+  </script></body>
 </html>
