@@ -10,6 +10,12 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/test-api-key", (req, res) => {
+  res.json({
+    status: process.env.MAGIC_HOUR_API_KEY ? "API key connected" : "API key missing"
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
